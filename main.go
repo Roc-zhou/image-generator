@@ -22,7 +22,7 @@ func main() {
 	r := gin.Default()
 
 	// 配置路由
-	r.GET("/:size/:bg/:fg", imageHandler.GenerateImage)
+	r.GET("/image/:size/:bg/:fg", imageHandler.GenerateImage)
 
 	// 启动服务器
 	log.Println("Starting server on :8080")

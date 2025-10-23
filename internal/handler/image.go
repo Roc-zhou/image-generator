@@ -1,6 +1,9 @@
 package handler
 
 import (
+	"bytes"
+	"crypto/sha1"
+	"encoding/hex"
 	"fmt"
 	"image-generator/internal/service"
 	"image/color"
@@ -8,6 +11,7 @@ import (
 	"path"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -25,24 +29,34 @@ func NewImageHandler(imageService *service.ImageService) *ImageHandler {
 func (h *ImageHandler) GenerateImage(c *gin.Context) {
 	// 解析尺寸
 	size := c.Param("size")
-	dimensions := strings.Split(size, "x")
-	if len(dimensions) != 2 {
-		c.String(http.StatusBadRequest, "Invalid size format")
-		return
+	var width, height int
+	if strings.Contains(size, "x") {
+		parts := strings.Split(size, "x")
+		if len(parts) != 2 {
+			c.String(http.StatusBadRequest, "Invalid size format")
+			return
+		}
+		w, err := strconv.Atoi(parts[0])
+		if err != nil {
+			c.String(http.StatusBadRequest, "Invalid width")
+			return
+		}
+		hgt, err := strconv.Atoi(parts[1])
+		if err != nil {
+			c.String(http.StatusBadRequest, "Invalid height")
+			return
+		}
+		width = w
+		height = hgt
+	} else {
+		v, err := strconv.Atoi(size)
+		if err != nil {
+			c.String(http.StatusBadRequest, "Invalid size")
+			return
+		}
+		width = v
+		height = v
 	}
-
-	width, err := strconv.Atoi(dimensions[0])
-	if err != nil {
-		c.String(http.StatusBadRequest, "Invalid width")
-		return
-	}
-
-	height, err := strconv.Atoi(dimensions[1])
-	if err != nil {
-		c.String(http.StatusBadRequest, "Invalid height")
-		return
-	}
-
 	// 解析背景色和前景色
 	bgColorHex := c.Param("bg")
 	fgColorHex := c.Param("fg")
@@ -80,12 +94,35 @@ func (h *ImageHandler) GenerateImage(c *gin.Context) {
 		return
 	}
 
-	// 设置响应头
-	c.Header("Content-Type", fmt.Sprintf("image/%s", format))
-	c.Header("Cache-Control", "public, max-age=31536000")
+	// 将图片写入内存缓冲以便计算 ETag
+	buf := &bytes.Buffer{}
+	_, err = img.WriteTo(buf)
+	if err != nil {
+		c.String(http.StatusInternalServerError, "Failed to write image")
+		return
+	}
 
-	// 写入响应
-	img.WriteTo(c.Writer)
+	// 计算 ETag（使用 SHA1）
+	sum := sha1.Sum(buf.Bytes())
+	etag := "\"" + hex.EncodeToString(sum[:]) + "\""
+
+	// 如果客户端有 If-None-Match，且匹配 ETag，则返回 304
+	if inm := c.GetHeader("If-None-Match"); inm != "" {
+		if inm == etag {
+			maxAge := 60 * 60 * 24 * 30 // 30 days
+			c.Header("Cache-Control", fmt.Sprintf("public, max-age=%d", maxAge))
+			c.Status(http.StatusNotModified)
+			return
+		}
+	}
+
+	// 设置响应头并返回图片
+	c.Header("ETag", etag)
+	c.Header("Content-Type", fmt.Sprintf("image/%s", format))
+	c.Header("Content-Length", strconv.Itoa(buf.Len()))
+	c.Header("Last-Modified", time.Now().UTC().Format(http.TimeFormat))
+
+	_, _ = c.Writer.Write(buf.Bytes())
 }
 
 func parseHexColor(hex string) (color.Color, error) {
