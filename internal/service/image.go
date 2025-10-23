@@ -54,31 +54,31 @@ func (s *ImageService) GenerateImage(width, height int, bgColor, fgColor color.C
 	if height < width {
 		minDimension = float64(height)
 	}
-	
+
 	// 根据文本长度动态调整字体大小
 	textLength := float64(len(text))
 	if textLength == 0 {
 		textLength = 1
 	}
-	
+
 	// 初始字体大小设置为最小边长的 1/3
 	fontSize := minDimension / 3
-	
+
 	// 如果文本较长，进一步调整字体大小
 	if textLength > 5 {
 		fontSize = fontSize * 5 / textLength
 	}
-	
+
 	// 确保字体大小不会太小
 	if fontSize < 12 {
 		fontSize = 12
 	}
-	
+
 	c.SetFontSize(fontSize)
-	
+
 	// 估算文本宽度
 	textWidth := fontSize * textLength * 0.6
-	
+
 	// 如果文本宽度超过图片宽度，调整字体大小
 	if textWidth > float64(width)*0.9 {
 		fontSize = fontSize * float64(width) * 0.9 / textWidth
