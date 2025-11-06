@@ -121,6 +121,8 @@ func (h *ImageHandler) GenerateImage(c *gin.Context) {
 	c.Header("Content-Type", fmt.Sprintf("image/%s", format))
 	c.Header("Content-Length", strconv.Itoa(buf.Len()))
 	c.Header("Last-Modified", time.Now().UTC().Format(http.TimeFormat))
+	// 提示浏览器下载或保存时的默认文件名：{width}x{height}.{format}
+	c.Header("Content-Disposition", fmt.Sprintf("inline; filename=\"%dx%d.%s\"", width, height, format))
 
 	_, _ = c.Writer.Write(buf.Bytes())
 }

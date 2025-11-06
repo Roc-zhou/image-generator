@@ -30,20 +30,22 @@ https://your-domain/{size}/{bgcolor}/{fgcolor}.{format}?text={text}
 
 1. 基本用法：
 ```
-http://localhost:8080/600x400/000/fff.png
+http://localhost:8080/image/700x100/000/fff
+http://localhost:8080/image/700x100/000/fff.png
+http://localhost:8080/image/700x100/000/fff.jpg
 ```
-生成一个 600x400 的黑底白字图片，显示尺寸文本 "600x400"
+生成一个 700x100 的黑底白字图片，显示尺寸文本 "700x100"
 
 2. 自定义文字：
 ```
-http://localhost:8080/300x200/f00/fff.png?text=Hello
+http://localhost:8080/image/700x100/000/fff.png?text=Hello
 ```
-生成一个 300x200 的红底白字图片，显示文本 "Hello"
+生成一个 700x100 的红底白字图片，显示文本 "Hello"
 
 3. 不同格式：
 ```
-http://localhost:8080/800x600/000/fff.jpg
-http://localhost:8080/800x600/000/fff.gif
+http://localhost:8080/image/700x100/000/fff.png
+http://localhost:8080/image/700x100/000/fff.jpg
 ```
 生成不同格式的图片
 
